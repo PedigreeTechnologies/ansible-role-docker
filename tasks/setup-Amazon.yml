@@ -1,0 +1,11 @@
+---
+- name: add amazon-linux-extras
+  yum:
+    name:
+      - amazon-linux-extras
+    state: present
+
+- name: enable docker
+  command:
+    cmd: amazon-linux-extras enable docker
+  tags: ['skip_ansible_lint']
