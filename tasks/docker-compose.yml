@@ -1,23 +1,35 @@
 ---
-- name: Check current docker-compose version.
-  command: "{{ docker_compose_path }} --version"
-  register: docker_compose_current_version
+- name: Create compose plugin directory
+  ansible.builtin.file:
+    path: "{{ docker_compose_plugin_dir }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: 0775
+
+- name: Check current docker compose plugin version.
+  ansible.builtin.command: "{{ docker_compose_plugin_path }} --version"
+  register: docker_compose_plugin_version_out
   check_mode: false
   changed_when: false
   failed_when: false
 
+- name: Debug
+  ansible.builtin.debug:
+    msg: "Version = {{ docker_compose_plugin_version }}"
+
 - name: Delete existing docker-compose version if it's different.
-  file:
-    path: "{{ docker_compose_path }}"
+  ansible.builtin.file:
+    path: "{{ docker_compose_plugin_path }}"
     state: absent
   when: >
-    docker_compose_current_version.stdout is defined
-    and docker_compose_version not in docker_compose_current_version.stdout
+    docker_compose_plugin_version is defined
+    and docker_compose_plugin_version[0] not in docker_compose_plugin_version_out.stdout
 
 - name: Install Docker Compose (if configured).
-  get_url:
-    url: "{{ docker_compose_url }}"
-    dest: "{{ docker_compose_path }}"
+  ansible.builtin.get_url:
+    url: "{{ docker_compose_plugin_url }}"
+    dest: "{{ docker_compose_plugin_path }}"
     mode: 0755
   when: >
     docker_compose_current_version.stdout is not defined
