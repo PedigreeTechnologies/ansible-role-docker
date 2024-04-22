@@ -1,0 +1,13 @@
+---
+- name: Install Docker.
+  dnf:
+    name: "{{ docker_packages }}"
+    state: "{{ docker_packages_state }}"
+  notify: restart docker
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Uninstall requests so that we can install docker python module via pip
+  dnf:
+    name: "python3-requests" # note, this will break cloud-init, since cloud-init depends on this package.
+    state: "absent"
+  ignore_errors: "{{ ansible_check_mode }}"

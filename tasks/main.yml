@@ -13,31 +13,34 @@
 - include_tasks: setup-RedHat.yml
   when: ansible_os_family == 'RedHat' and ansible_distribution != 'Amazon'
 
-- include_tasks: setup-Amazon.yml
-  when: ansible_distribution == 'Amazon'
-
 - include_tasks: setup-Debian.yml
   when: ansible_os_family == 'Debian'
 
-- block:
-  - name: Install Docker packages.
-    package:
-      name: "{{ docker_packages }}"
-      state: "{{ docker_packages_state }}"
-    notify: restart docker
-    ignore_errors: "{{ ansible_check_mode }}"
-    when: "ansible_version.full is version_compare('2.12', '<') or ansible_os_family not in ['RedHat', 'Debian']"
+- include_tasks: setup-Amazon-2.yml
+  when: ansible_distribution == 'Amazon' and ansible_distribution_version == "2"
 
-  - name: Install Docker packages (with downgrade option).
-    package:
-      name: "{{ docker_packages }}"
-      state: "{{ docker_packages_state }}"
-      allow_downgrade: true
-    notify: restart docker
-    ignore_errors: "{{ ansible_check_mode }}"
-    when: "ansible_version.full is version_compare('2.12', '>=') and ansible_os_family in ['RedHat', 'Debian']"
+- include_tasks: setup-Amazon-2023.yml
+  when: ansible_distribution == 'Amazon' and ansible_distribution_version == "2023"
 
+- name: Install docker on anything non-Amazon
   when: ansible_distribution != 'Amazon'
+  block:
+    - name: Install Docker packages.
+      package:
+        name: "{{ docker_packages }}"
+        state: "{{ docker_packages_state }}"
+      notify: restart docker
+      ignore_errors: "{{ ansible_check_mode }}"
+      when: "ansible_version.full is version_compare('2.12', '<') or ansible_os_family not in ['RedHat', 'Debian']"
+
+    - name: Install Docker packages (with downgrade option).
+      package:
+        name: "{{ docker_packages }}"
+        state: "{{ docker_packages_state }}"
+        allow_downgrade: true
+      notify: restart docker
+      ignore_errors: "{{ ansible_check_mode }}"
+      when: "ansible_version.full is version_compare('2.12', '>=') and ansible_os_family in ['RedHat', 'Debian']"
 
 - name: Ensure /etc/docker/ directory exists.
   file:
@@ -85,3 +88,9 @@
 
 - include_tasks: docker-users.yml
   when: at_least_one_user_to_modify is defined
+
+- name: install pip docker
+  pip:
+    name:
+      - docker
+    state: present

@@ -14,17 +14,13 @@
   changed_when: false
   failed_when: false
 
-- name: Debug
-  ansible.builtin.debug:
-    msg: "Version = {{ docker_compose_plugin_version }}"
-
 - name: Delete existing docker-compose version if it's different.
   ansible.builtin.file:
     path: "{{ docker_compose_plugin_path }}"
     state: absent
   when: >
     docker_compose_plugin_version is defined
-    and docker_compose_plugin_version[0] not in docker_compose_plugin_version_out.stdout
+    and docker_compose_plugin_version not in docker_compose_plugin_version_out.stdout
 
 - name: Install Docker Compose (if configured).
   ansible.builtin.get_url:
@@ -32,5 +28,6 @@
     dest: "{{ docker_compose_plugin_path }}"
     mode: 0755
   when: >
-    docker_compose_current_version.stdout is not defined
-    or docker_compose_version not in docker_compose_current_version.stdout
+    docker_install_compose_plugin and 
+    (docker_compose_current_version_out.stdout is not defined
+    or docker_compose_plugin_version not in docker_compose_plugin_version_out.stdout)
